@@ -1,0 +1,1254 @@
+/* ==========================================================================
+   Flujo Maestro — Simulador de Libertad Financiera
+   Sistema de Diseño Glassmorphism HSL + Capa de Animaciones
+   ========================================================================== */
+
+:root {
+  /* Paleta Base HSL */
+  --bg-deep: hsl(224, 71%, 4%);
+  --bg-surface: hsl(222, 47%, 9%);
+  --bg-card: hsla(222, 40%, 14%, 0.72);
+  --bg-card-hover: hsla(222, 40%, 18%, 0.85);
+  --border-glass: hsla(220, 20%, 35%, 0.35);
+  --border-focus: hsla(150, 75%, 45%, 0.6);
+
+  /* Acentos Temáticos */
+  --color-positive: hsl(150, 75%, 45%);
+  --color-positive-glow: hsla(150, 75%, 45%, 0.3);
+  --color-negative: hsl(350, 80%, 60%);
+  --color-gold: hsl(43, 96%, 56%);
+  --color-sky: hsl(199, 89%, 52%);
+  --color-purple: hsl(265, 83%, 65%);
+
+  /* Tipografías y Textos */
+  --text-main: hsl(210, 40%, 98%);
+  --text-muted: hsl(215, 20%, 65%);
+  --text-dim: hsl(215, 15%, 45%);
+
+  /* Sombras y Filtros */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --blur-glass: blur(14px);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-deep);
+  background-image: 
+    radial-gradient(circle at 10% 20%, hsla(220, 60%, 15%, 0.5) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, hsla(160, 60%, 12%, 0.4) 0%, transparent 45%);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, .brand-title, .cash-val, .progress-percent {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ==========================================================================
+   Header y Navegación
+   ========================================================================== */
+
+.app-header {
+  background: hsla(224, 60%, 6%, 0.85);
+  backdrop-filter: var(--blur-glass);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-container {
+  max-width: 1540px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, var(--color-gold), hsl(30, 95%, 45%));
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+}
+
+.brand-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #fff 0%, hsl(199, 89%, 74%) 25%, #fff 50%, hsl(265, 60%, 78%) 75%, #fff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: titleShine 8s linear infinite;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mode-pill {
+  background: hsla(217, 91%, 60%, 0.15);
+  border: 1px solid hsla(217, 91%, 60%, 0.4);
+  color: var(--color-sky);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+}
+
+/* ==========================================================================
+   Botones y Controles
+   ========================================================================== */
+
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-positive), hsl(155, 80%, 38%));
+  color: #fff;
+  box-shadow: 0 4px 14px var(--color-positive-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px hsla(150, 75%, 45%, 0.45);
+}
+
+.btn-secondary {
+  background: hsla(220, 20%, 25%, 0.6);
+  color: var(--text-main);
+  border: 1px solid var(--border-glass);
+}
+
+.btn-secondary:hover {
+  background: hsla(220, 20%, 32%, 0.8);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-glass);
+}
+
+.btn-outline:hover {
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--color-purple), hsl(250, 70%, 55%));
+  color: #fff;
+}
+
+.btn-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px hsla(265, 83%, 65%, 0.4);
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--color-gold), hsl(35, 90%, 48%));
+  color: #111;
+  font-weight: 700;
+  box-shadow: 0 4px 16px hsla(43, 96%, 56%, 0.35);
+}
+
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px hsla(43, 96%, 56%, 0.55);
+}
+
+.btn-lg {
+  padding: 0.75rem 1.6rem;
+  font-size: 1rem;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Layout Principal
+   ========================================================================== */
+
+.main-layout {
+  max-width: 1540px;
+  margin: 1.5rem auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+@media (max-width: 1100px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease;
+}
+
+.glass-panel:hover {
+  border-color: hsla(220, 30%, 45%, 0.45);
+}
+
+/* ==========================================================================
+   Tablero Canvas y Controles
+   ========================================================================== */
+
+.board-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.board-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.board-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.turn-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pulse-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-positive);
+  box-shadow: 0 0 10px var(--color-positive);
+  animation: pulseGlow 1.8s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.turn-text {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.dice-display {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.die {
+  font-size: 1.4rem;
+  animation: shakeDice 0.3s ease;
+}
+
+.dice-total {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-gold);
+  margin-left: 0.2rem;
+}
+
+.canvas-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-glass);
+}
+
+#boardCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.board-controls {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   Registro de Eventos (Log)
+   ========================================================================== */
+
+.log-container {
+  max-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.panel-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.log-stream {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-right: 0.4rem;
+  font-size: 0.82rem;
+}
+
+.log-entry {
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: hsla(220, 30%, 12%, 0.6);
+  border-left: 3px solid var(--border-glass);
+  line-height: 1.4;
+  animation: logSlide 0.35s ease;
+}
+
+.log-info { border-left-color: var(--color-sky); }
+.log-success { border-left-color: var(--color-positive); }
+.log-warning { border-left-color: var(--color-gold); }
+.log-danger { border-left-color: var(--color-negative); }
+
+/* ==========================================================================
+   Columna Financiera & Balance Sheet
+   ========================================================================== */
+
+.financial-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.progress-card {
+  padding: 1rem 1.25rem;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 0.6rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.progress-metric {
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.progress-percent {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-gold);
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: hsla(220, 30%, 15%, 0.8);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border-glass);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-sky), var(--color-positive), var(--color-gold));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* Ficha de Perfil */
+.profile-card {
+  padding: 1.25rem;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.avatar {
+  font-size: 2rem;
+  width: 52px;
+  height: 52px;
+  background: hsla(220, 30%, 20%, 0.8);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-glass);
+}
+
+.profile-meta {
+  flex: 1;
+}
+
+.player-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.player-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.cash-badge {
+  text-align: right;
+}
+
+.cash-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+}
+
+.cash-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-positive);
+}
+
+.financial-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  background: hsla(220, 30%, 11%, 0.6);
+  padding: 0.8rem;
+  border-radius: var(--radius-sm);
+}
+
+.quick-stat {
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+  display: block;
+}
+
+/* ==========================================================================
+   Pestañas y Contenido de Estados
+   ========================================================================== */
+
+.tabs-nav {
+  display: flex;
+  gap: 0.4rem;
+  border-bottom: 1px solid var(--border-glass);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--text-main);
+  background: hsla(220, 20%, 25%, 0.4);
+}
+
+.tab-btn.active {
+  color: var(--text-main);
+  background: hsla(220, 30%, 24%, 0.8);
+  border: 1px solid var(--border-glass);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Grid Estado de Resultados */
+.statement-grid, .balance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .statement-grid, .balance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statement-box, .balance-box {
+  background: hsla(220, 30%, 11%, 0.5);
+  padding: 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid hsla(220, 20%, 30%, 0.3);
+}
+
+.box-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.income-title { color: var(--color-positive); }
+.expense-title { color: var(--color-negative); }
+
+.statement-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  padding: 0.3rem 0;
+  color: var(--text-muted);
+}
+
+.statement-row strong {
+  color: var(--text-main);
+}
+
+.total-row {
+  border-top: 1px dashed var(--border-glass);
+  margin-top: 0.4rem;
+  padding-top: 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+/* Listas de Activos / Pasivos */
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.asset-card, .liability-card {
+  background: hsla(220, 30%, 14%, 0.7);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-positive);
+  font-size: 0.8rem;
+}
+
+.liability-card {
+  border-left-color: var(--color-negative);
+}
+
+.asset-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.asset-details {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+}
+
+.empty-hint {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Banco y Deudas
+   ========================================================================== */
+
+.bank-management {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.bank-section h4 {
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.section-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.input-action-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input-control {
+  background: hsla(220, 30%, 10%, 0.8);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.input-control:focus {
+  border-color: var(--border-focus);
+}
+
+.payoff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem;
+}
+
+.btn-payoff {
+  background: hsla(220, 30%, 15%, 0.8);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.78rem;
+}
+
+.btn-payoff:hover:not(:disabled) {
+  border-color: var(--color-positive);
+  background: hsla(150, 75%, 45%, 0.1);
+}
+
+.btn-payoff:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Mercado Bursátil & Derivados (Modo Avanzado)
+   ========================================================================== */
+
+.market-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.badge-accent {
+  background: hsla(265, 83%, 65%, 0.2);
+  color: var(--color-purple);
+  border: 1px solid hsla(265, 83%, 65%, 0.4);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.tickers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.ticker-card {
+  background: hsla(220, 30%, 12%, 0.7);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  animation: tickerIn 0.4s ease backwards;
+}
+
+.ticker-top {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.ticker-symbol { color: var(--color-sky); }
+.ticker-price { font-size: 1.1rem; }
+
+.ticker-chart {
+  height: 36px;
+  margin: 0.4rem 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.chart-bar {
+  flex: 1;
+  background: var(--color-sky);
+  opacity: 0.7;
+  border-radius: 2px;
+}
+
+.ticker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+
+.ticker-actions button {
+  flex: 1 1 40%;
+  font-size: 0.7rem;
+  padding: 0.3rem 0;
+}
+
+/* ==========================================================================
+   Modales
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.modal-card, .setup-dialog, .welcome-dialog {
+  max-width: 520px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.card-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--color-sky);
+  color: #000;
+  margin-bottom: 0.6rem;
+}
+
+.card-title {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-description {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.card-metrics-grid {
+  background: hsla(220, 30%, 10%, 0.8);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.setup-dialog {
+  padding: 1.5rem;
+}
+
+/* --- Pantalla de Bienvenida y Configuración (visible al cargar la app) --- */
+.welcome-dialog {
+  max-width: 640px;
+  padding: 1.9rem 1.75rem;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.welcome-hero {
+  text-align: center;
+  margin-bottom: 1.4rem;
+}
+
+.welcome-badge {
+  display: inline-block;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--color-gold);
+  border: 1px solid hsla(43, 96%, 56%, 0.35);
+  background: hsla(43, 96%, 56%, 0.08);
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.welcome-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 0.45rem;
+  background: linear-gradient(90deg, #fff 0%, hsl(199, 89%, 74%) 25%, #fff 50%, hsl(265, 60%, 78%) 75%, #fff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: titleShine 8s linear infinite;
+}
+
+.welcome-tagline {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  max-width: 48ch;
+  margin: 0 auto 0.9rem;
+}
+
+.welcome-features {
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+  text-align: left;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  background: hsla(220, 30%, 10%, 0.55);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+}
+
+.welcome-features strong {
+  color: var(--text-main);
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.setup-group {
+  margin-bottom: 1rem;
+}
+
+.setup-group label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.ai-checkboxes, .radio-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.radio-row {
+  flex-direction: row;
+  gap: 1.2rem;
+}
+
+.setup-actions {
+  margin-top: 1.5rem;
+  text-align: right;
+}
+
+/* --- Multijugador: filas de participantes del diálogo de configuración --- */
+.players-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.players-header-row label {
+  margin-bottom: 0;
+}
+
+.btn-sm {
+  font-size: 0.72rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.player-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 44vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.player-slot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: var(--radius-sm);
+  background: rgba(15, 23, 42, 0.45);
+  animation: slotIn 0.3s ease both;
+}
+
+.player-slot .slot-color {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
+}
+
+.player-slot .slot-name { flex: 1 1 110px; min-width: 0; }
+.player-slot .slot-type { flex: 0 1 115px; min-width: 0; }
+.player-slot .slot-profession { flex: 1.2 1 150px; min-width: 0; }
+.player-slot .slot-ai-profile { flex: 1 1 130px; min-width: 0; }
+
+.slot-remove {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.12);
+  color: #fb7185;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.slot-remove:hover {
+  background: rgba(244, 63, 94, 0.28);
+  transform: scale(1.08);
+}
+
+@keyframes slotIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   Utilidades y Footer
+   ========================================================================== */
+
+.hidden { display: none !important; }
+.val-positive { color: var(--color-positive); }
+.val-negative { color: var(--color-negative); }
+.val-muted { color: var(--text-muted); }
+.separator { color: var(--text-dim); }
+
+.app-footer {
+  text-align: center;
+  padding: 1.2rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border-glass);
+  margin-top: auto;
+}
+
+/* ==========================================================================
+   Capa de Animaciones y Microinteracciones (Flujo Maestro)
+   ========================================================================== */
+
+/* Fondo aurora animado detrás de todo el contenido */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 30% 25% at 20% 30%, hsla(199, 89%, 52%, 0.10), transparent 70%),
+    radial-gradient(ellipse 28% 22% at 80% 20%, hsla(150, 75%, 45%, 0.08), transparent 70%),
+    radial-gradient(ellipse 32% 24% at 65% 85%, hsla(265, 83%, 65%, 0.09), transparent 70%),
+    radial-gradient(ellipse 25% 20% at 15% 80%, hsla(43, 96%, 56%, 0.06), transparent 70%);
+  animation: auroraShift 22s ease-in-out infinite alternate;
+}
+
+@keyframes auroraShift {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate(3%, -2%) rotate(4deg) scale(1.08); }
+  100% { transform: translate(-3%, 2%) rotate(-3deg) scale(1.04); }
+}
+
+/* Monedas flotantes ambientales (capa decorativa) */
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.coin {
+  position: absolute;
+  top: 0;
+  opacity: 0.13;
+  animation: floatCoin linear infinite;
+}
+
+.coin:nth-child(1) { left: 6%;  font-size: 1.2rem; animation-duration: 19s; animation-delay: -2s; }
+.coin:nth-child(2) { left: 28%; font-size: 1.7rem; animation-duration: 24s; animation-delay: -9s; }
+.coin:nth-child(3) { left: 47%; font-size: 1.1rem; animation-duration: 21s; animation-delay: -14s; }
+.coin:nth-child(4) { left: 63%; font-size: 1.5rem; animation-duration: 26s; animation-delay: -5s; }
+.coin:nth-child(5) { left: 80%; font-size: 1.3rem; animation-duration: 18s; animation-delay: -11s; }
+.coin:nth-child(6) { left: 92%; font-size: 1.8rem; animation-duration: 23s; animation-delay: -17s; }
+
+@keyframes floatCoin {
+  0% { transform: translateY(105vh) rotate(0deg); opacity: 0; }
+  8% { opacity: 0.14; }
+  50% { transform: translateY(48vh) rotate(180deg); }
+  92% { opacity: 0.12; }
+  100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+}
+
+/* Brillo deslizante del título de la marca */
+@keyframes titleShine {
+  to { background-position: 200% center; }
+}
+
+/* Dados: sacudida base (keyframes antes ausentes) y voltereta al lanzar */
+@keyframes shakeDice {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-14deg) scale(1.12); }
+  50% { transform: rotate(10deg) scale(0.94); }
+  75% { transform: rotate(-6deg) scale(1.06); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.dice-display.rolling .die {
+  animation: diceTumble 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes diceTumble {
+  0% { transform: rotate(0deg) translateY(0) scale(1); }
+  30% { transform: rotate(-120deg) translateY(-8px) scale(1.25); }
+  60% { transform: rotate(-240deg) translateY(3px) scale(0.9); }
+  100% { transform: rotate(-360deg) translateY(0) scale(1); }
+}
+
+/* Pulsación del botón principal mientras está disponible */
+#btnRollDice:not(:disabled) {
+  animation: btnPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes btnPulse {
+  0%, 100% { box-shadow: 0 4px 14px var(--color-positive-glow); }
+  50% { box-shadow: 0 4px 24px hsla(150, 75%, 45%, 0.6); }
+}
+
+/* Entrada deslizante de cada línea del registro */
+@keyframes logSlide {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Destellos de efectivo: verde al subir, rojo al bajar */
+.cash-flash-up { animation: cashFlashUp 0.9s ease; }
+.cash-flash-down { animation: cashFlashDown 0.9s ease; }
+
+@keyframes cashFlashUp {
+  0% { color: var(--color-positive); text-shadow: 0 0 18px hsla(150, 75%, 45%, 0.9); transform: scale(1.18); }
+  100% { color: var(--color-positive); text-shadow: none; transform: scale(1); }
+}
+
+@keyframes cashFlashDown {
+  0% { color: var(--color-negative); text-shadow: 0 0 18px hsla(350, 80%, 60%, 0.9); transform: scale(1.18); }
+  100% { color: var(--color-negative); text-shadow: none; transform: scale(1); }
+}
+
+/* Entrada escalonada de tarjetas del mercado y destello de precios */
+@keyframes tickerIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ticker-price.price-up { color: var(--color-positive); animation: priceFlashUp 1.2s ease; }
+.ticker-price.price-down { color: var(--color-negative); animation: priceFlashDown 1.2s ease; }
+
+@keyframes priceFlashUp {
+  0% { transform: scale(1.25); text-shadow: 0 0 14px hsla(150, 75%, 45%, 0.85); }
+  100% { transform: scale(1); text-shadow: none; }
+}
+
+@keyframes priceFlashDown {
+  0% { transform: scale(1.25); text-shadow: 0 0 14px hsla(350, 80%, 60%, 0.85); }
+  100% { transform: scale(1); text-shadow: none; }
+}
+
+/* Crecimiento de las barras del mini-gráfico bursátil */
+.chart-bar {
+  animation: barGrow 0.5s ease backwards;
+}
+
+@keyframes barGrow {
+  from { transform: scaleY(0.2); opacity: 0.2; }
+  to { transform: scaleY(1); opacity: 0.7; }
+}
+
+/* Confeti de celebración (escape de la Carrera de la Rata, victoria) */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -4vh;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(112vh) rotate(680deg); opacity: 0.25; }
+}
+
+/* Accesibilidad: respetar la preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  body::before, .coin, #btnRollDice:not(:disabled) {
+    animation: none !important;
+  }
+}

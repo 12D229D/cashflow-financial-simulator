@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flujo Maestro — Simulador de Libertad Financiera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Capa de efectos ambientales: monedas flotando en el fondo -->
+  <div class="fx-layer" aria-hidden="true">
+    <span class="coin">🪙</span>
+    <span class="coin">💰</span>
+    <span class="coin">💵</span>
+    <span class="coin">🪙</span>
+    <span class="coin">💵</span>
+    <span class="coin">💰</span>
+  </div>
+
+  <!-- Header principal -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-badge">SIMULADOR DE LIBERTAD FINANCIERA</span>
+        <h1 class="brand-title">Flujo Maestro</h1>
+      </div>
+      <div class="header-actions">
+        <div class="mode-pill" id="modePill">Modo: Esencial (Fundamental)</div>
+        <button id="btnNewGame" class="btn btn-secondary">🎮 Nueva Partida</button>
+        <button id="btnSaveGame" class="btn btn-outline">💾 Guardar</button>
+        <button id="btnLoadGame" class="btn btn-outline">📂 Cargar</button>
+        <button id="btnToggleMode" class="btn btn-accent">⚡ Activar Modo Avanzado</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <main class="main-layout">
+    <!-- Columna Izquierda: Tablero Canvas y Controles de Turno -->
+    <section class="board-column">
+      <div class="glass-panel board-container">
+        <div class="board-header">
+          <div class="turn-indicator">
+            <span class="pulse-indicator"></span>
+            <span id="turnLabel" class="turn-text">Turno 1: Tu Turno</span>
+          </div>
+          <div class="dice-display" id="diceDisplay">
+            <span class="die" id="die1">🎲</span>
+            <span class="die hidden" id="die2">🎲</span>
+            <span class="dice-total" id="diceTotal">Lanza el dado</span>
+          </div>
+        </div>
+
+        <!-- Canvas del Tablero Interactivo -->
+        <div class="canvas-wrapper">
+          <canvas id="boardCanvas" width="600" height="600"></canvas>
+        </div>
+
+        <!-- Barra de Acciones del Tablero -->
+        <div class="board-controls">
+          <button id="btnRollDice" class="btn btn-primary btn-lg">🎲 Lanzar Dado</button>
+          <button id="btnCharity" class="btn btn-secondary">🤝 Donar Caridad (10%)</button>
+          <button id="btnExitRatRace" class="btn btn-gold hidden">🚀 ¡Salir a la Vía Rápida!</button>
+        </div>
+      </div>
+
+      <!-- Registro de Eventos (Game Log) -->
+      <div class="glass-panel log-container">
+        <div class="panel-header">
+          <h3>📜 Registro de Transacciones y Sucesos</h3>
+          <button id="btnClearLog" class="btn-text">Limpiar</button>
+        </div>
+        <div id="gameLog" class="log-stream">
+          <div class="log-entry log-info">¡Bienvenido a Flujo Maestro! Configura tu mesa en la pantalla de bienvenida (reglamento, jugadores humanos y de IA) y pulsa 🚀 Iniciar Partida.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Columna Derecha: Hoja de Balance Financiero Dinámica -->
+    <section class="financial-column">
+      <!-- Indicador de Libertad Financiera (Flujo Pasivo vs Gastos) -->
+      <div class="glass-panel progress-card">
+        <div class="progress-info">
+          <div>
+            <span class="label">Meta de Escape (Libertad Financiera)</span>
+            <div class="progress-metric">
+              <span id="txtPassiveIncome" class="val-positive">$0</span>
+              <span class="separator">/</span>
+              <span id="txtTargetExpenses" class="val-muted">$0</span>
+            </div>
+          </div>
+          <div class="progress-percent" id="txtExitProgress">0%</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Ficha del Jugador Actual -->
+      <div class="glass-panel profile-card">
+        <div class="profile-header">
+          <div class="avatar" id="playerAvatar">💼</div>
+          <div class="profile-meta">
+            <h2 id="playerName" class="player-name">Jugador 1</h2>
+            <div class="player-sub" id="playerProfession">Webmaster</div>
+          </div>
+          <div class="cash-badge">
+            <span class="cash-label">Efectivo en Mano</span>
+            <span class="cash-val" id="playerCash">$0</span>
+          </div>
+        </div>
+
+        <div class="financial-quick-grid">
+          <div class="quick-stat">
+            <span class="stat-label">Flujo Mensual (Paycheck)</span>
+            <span class="stat-value val-positive" id="playerCashflow">+$0</span>
+          </div>
+          <div class="quick-stat">
+            <span class="stat-label">Ingresos Totales</span>
+            <span class="stat-value" id="playerTotalIncome">$0</span>
+          </div>
+          <div class="quick-stat">
+            <span class="stat-label">Gastos Totales</span>
+            <span class="stat-value val-negative" id="playerTotalExpenses">$0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestañas del Estado Financiero -->
+      <div class="glass-panel statement-panel">
+        <div class="tabs-nav">
+          <button class="tab-btn active" data-tab="tabStatement">📊 Estado de Resultados</button>
+          <button class="tab-btn" data-tab="tabBalance">⚖️ Balance General</button>
+          <button class="tab-btn" data-tab="tabBank">🏦 Préstamos y Deudas</button>
+          <button class="tab-btn" data-tab="tabMarket202" id="tabMarketBtn">📈 Bolsa & Derivados</button>
+        </div>
+
+        <!-- Pestaña 1: Estado de Resultados -->
+        <div class="tab-content active" id="tabStatement">
+          <div class="statement-grid">
+            <div class="statement-box">
+              <h4 class="box-title income-title">Ingresos Mensuales</h4>
+              <div class="statement-row"><span>Salario:</span><strong id="stSalary">$0</strong></div>
+              <div class="statement-row"><span>Flujo Inmobiliario:</span><strong class="val-positive" id="stReCashflow">$0</strong></div>
+              <div class="statement-row"><span>Flujo Negocios:</span><strong class="val-positive" id="stBizCashflow">$0</strong></div>
+              <div class="statement-row"><span>Dividendos Acciones:</span><strong class="val-positive" id="stStockDividends">$0</strong></div>
+              <div class="statement-row total-row"><span>Ingreso Total:</span><strong id="stTotalIncome">$0</strong></div>
+            </div>
+
+            <div class="statement-box">
+              <h4 class="box-title expense-title">Gastos Fijos Mensuales</h4>
+              <div class="statement-row"><span>Impuestos:</span><strong id="stTaxes">$0</strong></div>
+              <div class="statement-row"><span>Hipoteca Vivienda:</span><strong id="stMortgage">$0</strong></div>
+              <div class="statement-row"><span>Préstamo Escolar:</span><strong id="stSchoolLoan">$0</strong></div>
+              <div class="statement-row"><span>Préstamo de Auto:</span><strong id="stCarLoan">$0</strong></div>
+              <div class="statement-row"><span>Tarjetas de Crédito:</span><strong id="stCreditCards">$0</strong></div>
+              <div class="statement-row"><span>Créditos Minoristas:</span><strong id="stRetailDebt">$0</strong></div>
+              <div class="statement-row"><span>Otros Gastos:</span><strong id="stOtherExpenses">$0</strong></div>
+              <div class="statement-row"><span>Gastos por Hijos (<span id="stChildCount">0</span>):</span><strong id="stChildExpense">$0</strong></div>
+              <div class="statement-row"><span>Interés Préstamo Banco (10%):</span><strong class="val-negative" id="stBankInterest">$0</strong></div>
+              <div class="statement-row total-row"><span>Gastos Totales:</span><strong class="val-negative" id="stTotalExpenses">$0</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pestaña 2: Balance General -->
+        <div class="tab-content" id="tabBalance">
+          <div class="balance-grid">
+            <div class="balance-box">
+              <h4 class="box-title">Activos (Generan Flujo o Plusvalía)</h4>
+              <div id="assetsList" class="items-list">
+                <div class="empty-hint">Sin activos adquiridos aún. ¡Cae en casillas de Oportunidad!</div>
+              </div>
+            </div>
+
+            <div class="balance-box">
+              <h4 class="box-title">Pasivos (Deudas Amortizables)</h4>
+              <div id="liabilitiesList" class="items-list">
+                <!-- Se llena dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pestaña 3: Banco y Deudas -->
+        <div class="tab-content" id="tabBank">
+          <div class="bank-management">
+            <div class="bank-section">
+              <h4>🏦 Solicitar Préstamo Bancario</h4>
+              <p class="section-desc">Tasa oficial: <strong>10% mensual</strong> sobre el monto prestado. Debe ser múltiplo de $1,000.</p>
+              <div class="input-action-row">
+                <input type="number" id="inputLoanAmount" step="1000" min="1000" value="1000" class="input-control">
+                <button id="btnTakeLoan" class="btn btn-primary">Pedir Préstamo</button>
+              </div>
+            </div>
+
+            <div class="bank-section">
+              <h4>💳 Amortizar y Liquidar Deudas</h4>
+              <p class="section-desc">Pagar deudas reduce de inmediato tus gastos mensuales y aumenta tu flujo neto.</p>
+              <div class="payoff-grid" id="payoffButtonsGrid">
+                <!-- Botones de liquidación generados en JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pestaña 4: Mercado Bursátil & Derivados (Modo Avanzado) -->
+        <div class="tab-content" id="tabMarket202">
+          <div class="market-hub">
+            <div class="market-header-row">
+              <h4>📈 Cotizaciones en Tiempo Real & Opciones Financieras</h4>
+              <span class="badge-accent">Patrones Técnicos Activos</span>
+            </div>
+            <div class="tickers-grid" id="tickersGrid">
+              <!-- Renderizado de tarjetas de acciones con mini gráficos y botones de comprar/calls/puts -->
+            </div>
+            <div class="options-portfolio">
+              <h5>Tus Contratos de Opciones y Posiciones Cortas</h5>
+              <div id="optionsList" class="items-list">
+                <div class="empty-hint">No posees opciones activas.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Interactivo de Cartas y Decisiones -->
+  <div class="modal-overlay hidden" id="cardModal">
+    <div class="glass-panel modal-card">
+      <div class="card-badge" id="modalBadge">OPORTUNIDAD</div>
+      <h3 class="card-title" id="modalTitle">Título del Trato</h3>
+      <p class="card-description" id="modalDescription">Descripción detallada...</p>
+      
+      <div class="card-metrics-grid" id="modalMetrics">
+        <!-- Rellenado dinámicamente -->
+      </div>
+
+      <div class="card-special-input hidden" id="modalStockControls">
+        <label for="inputStockShares">Cantidad de Acciones a Comprar:</label>
+        <div class="input-action-row">
+          <input type="number" id="inputStockShares" min="1" max="10000" value="100" class="input-control">
+          <button id="btnStockMax" class="btn btn-outline">Máx Posible</button>
+        </div>
+        <div class="cost-summary">Costo Total: <strong id="txtStockTotalCost">$0</strong></div>
+      </div>
+
+      <div class="modal-actions" id="modalActions">
+        <button id="btnModalBuy" class="btn btn-primary">Aceptar y Comprar</button>
+        <button id="btnModalPass" class="btn btn-outline">Pasar Turno</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pantalla de Bienvenida y Configuración de Partida (visible al cargar) -->
+  <div class="modal-overlay" id="welcomeScreen">
+    <div class="glass-panel welcome-dialog">
+      <div class="welcome-hero">
+        <span class="welcome-badge">SIMULADOR DE LIBERTAD FINANCIERA</span>
+        <h2 class="welcome-title">Flujo Maestro</h2>
+        <p class="welcome-tagline">Escapa de la Carrera de la Rata: construye flujo pasivo hasta superar tus gastos, rompe la barrera y compite en la Vía Rápida por tu sueño.</p>
+        <ul class="welcome-features">
+          <li>🪑 <strong>Hot-seat de 1 a 6 jugadores:</strong> humanos en pantalla compartida y rivales de IA.</li>
+          <li>🧠 <strong>5 perfiles de IA</strong> con estilos de riesgo propios (cauta, audaz, miedosa, lista, estándar).</li>
+          <li>📈 <strong>Modo Avanzado:</strong> bolsa con patrones técnicos, opciones Call/Put y ventas en corto.</li>
+        </ul>
+      </div>
+
+      <div class="setup-group">
+        <label>Reglamento Activo:</label>
+        <div class="radio-row">
+          <label><input type="radio" name="welcomeMode" value="101" checked> Esencial (Fundamental)</label>
+          <label><input type="radio" name="welcomeMode" value="202"> Avanzado (Opciones & Patrones)</label>
+        </div>
+      </div>
+
+      <div class="setup-group">
+        <div class="players-header-row">
+          <label>👥 Participantes (máx. 6):</label>
+          <button id="btnWelcomeAddPlayer" class="btn btn-outline btn-sm" type="button">➕ Añadir Jugador</button>
+        </div>
+        <div id="welcomePlayerSlots" class="player-slots">
+          <!-- Filas de participantes generadas dinámicamente desde app.js -->
+        </div>
+      </div>
+
+      <div class="setup-actions welcome-actions">
+        <button id="btnWelcomeStart" class="btn btn-primary btn-lg">🚀 Iniciar Partida</button>
+        <button id="btnWelcomeQuickStart" class="btn btn-secondary">🎲 Mesa Rápida (Tú + 2 IA)</button>
+        <button id="btnWelcomeCancel" class="btn btn-outline hidden" type="button">↩️ Volver a la Partida</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>Flujo Maestro — Portafolio Codex • Simulador educativo de inteligencia financiera • Desarrollado con Vanilla JS, Canvas y persistencia local en el navegador</p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
