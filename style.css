@@ -1,6 +1,22 @@
 /* ==========================================================================
    Flujo Maestro — Simulador de Libertad Financiera
    Sistema de Diseño Glassmorphism HSL + Capa de Animaciones
+   Estructura modular (DESIGN.md): Reset & Base → Variables & Temas →
+   Tipografía & Layout → Componentes → Utilidades/Animaciones → Responsive
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Reset & Base
+   ========================================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   2. Variables & Temas (tokens HSL — modo oscuro por defecto)
    ========================================================================== */
 
 :root {
@@ -25,19 +41,13 @@
   --text-muted: hsl(215, 20%, 65%);
   --text-dim: hsl(215, 15%, 45%);
 
-  /* Sombras y Filtros */
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  /* Sombras y Filtros (sombras suaves en capas, DESIGN.md §3.2) */
+  --shadow-sm: 0 2px 6px -1px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.5);
   --blur-glass: blur(14px);
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 body {
@@ -47,6 +57,7 @@ body {
     radial-gradient(circle at 10% 20%, hsla(220, 60%, 15%, 0.5) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, hsla(160, 60%, 12%, 0.4) 0%, transparent 45%);
   color: var(--text-main);
+  line-height: 1.5;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -55,6 +66,17 @@ body {
 
 h1, h2, h3, h4, h5, .brand-title, .cash-val, .progress-percent {
   font-family: 'Outfit', sans-serif;
+}
+
+/* Accesibilidad: indicador de foco visible para navegación por teclado (DESIGN.md §3.4) */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-positive);
+  outline-offset: 2px;
 }
 
 /* ==========================================================================
@@ -699,7 +721,6 @@ h1, h2, h3, h4, h5, .brand-title, .cash-val, .progress-percent {
   color: var(--text-main);
   padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
-  outline: none;
 }
 
 .input-control:focus {
@@ -1010,7 +1031,6 @@ h1, h2, h3, h4, h5, .brand-title, .cash-val, .progress-percent {
 }
 
 .sala-nueva-form input:focus {
-  outline: none;
   border-color: hsla(199, 89%, 60%, 0.6);
 }
 
