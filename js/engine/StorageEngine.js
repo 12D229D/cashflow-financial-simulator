@@ -50,6 +50,33 @@ export class StorageEngine {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE
     );
+
+    -- Salas de juego y partidas: implementadas en el navegador con IndexedDB
+    -- (js/engine/SalasDB.js, base "codex_flujo_maestro_db") porque GitHub Pages
+    -- solo sirve archivos estáticos. Este DDL documenta el modelo relacional
+    -- equivalente para una futura migración a SQLite / Cloudflare D1.
+    CREATE TABLE IF NOT EXISTS salas (
+      codigo TEXT PRIMARY KEY CHECK(length(codigo) = 3),   -- '001'–'999'
+      nombre TEXT NOT NULL,
+      creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+      actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS partidas (
+      id TEXT PRIMARY KEY CHECK(length(id) = 7),           -- 'NNN-AAA' (sala + '-' + 3 letras)
+      sala_codigo TEXT NOT NULL,
+      version TEXT DEFAULT '2.1.0',
+      modo TEXT CHECK(modo IN ('101', '202')),
+      turno INTEGER DEFAULT 1,
+      num_jugadores INTEGER,
+      resumen_jugadores TEXT,
+      creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+      actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+      estado_json TEXT NOT NULL,                           -- snapshot completo de la sesión
+      FOREIGN KEY(sala_codigo) REFERENCES salas(codigo) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_partidas_sala ON partidas(sala_codigo);
   `;
 
   static STORAGE_KEY = "codex_cashflow_saved_game";

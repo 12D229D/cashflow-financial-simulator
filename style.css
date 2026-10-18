@@ -882,6 +882,218 @@ h1, h2, h3, h4, h5, .brand-title, .cash-val, .progress-percent {
   padding: 1.5rem;
 }
 
+/* --- Panel de Salas y Partidas (base de datos local IndexedDB) --- */
+.salas-dialog {
+  max-width: 680px;
+  padding: 1.5rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.salas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.salas-header h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.salas-resumen {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: hsla(199, 89%, 60%, 0.1);
+  border: 1px solid hsla(199, 89%, 60%, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.sala-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+}
+
+.sala-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass);
+  background: hsla(220, 30%, 10%, 0.55);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.sala-card:hover {
+  border-color: hsla(199, 89%, 60%, 0.5);
+  transform: translateY(-1px);
+}
+
+.sala-card.selected {
+  border-color: var(--color-sky);
+  background: hsla(199, 89%, 60%, 0.14);
+  box-shadow: 0 0 0 1px hsla(199, 89%, 60%, 0.35);
+}
+
+.sala-code {
+  font-family: ui-monospace, 'Consolas', monospace;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+  background: hsla(43, 96%, 56%, 0.1);
+  border: 1px solid hsla(43, 96%, 56%, 0.3);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+}
+
+.sala-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.sala-card-body strong {
+  font-size: 0.88rem;
+}
+
+.sala-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.sala-card-pick {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--color-sky);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.sala-card:hover .sala-card-pick,
+.sala-card.selected .sala-card-pick {
+  opacity: 1;
+}
+
+.sala-nueva-form {
+  margin-bottom: 0.9rem;
+}
+
+.sala-nueva-form label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.sala-nueva-form input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass);
+  background: hsla(220, 30%, 8%, 0.75);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+
+.sala-nueva-form input:focus {
+  outline: none;
+  border-color: hsla(199, 89%, 60%, 0.6);
+}
+
+.salas-vacio {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0.9rem 0.5rem;
+  font-style: italic;
+}
+
+.sala-bloque {
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  background: hsla(220, 30%, 10%, 0.45);
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.sala-bloque-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+
+.sala-bloque-nombre {
+  font-size: 0.92rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.partida-rows {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.partida-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: hsla(220, 30%, 8%, 0.6);
+  border: 1px solid var(--border-glass);
+}
+
+.partida-id {
+  font-family: ui-monospace, 'Consolas', monospace;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--color-sky);
+}
+
+.partida-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-borrar.armed {
+  border-color: hsla(0, 84%, 60%, 0.7);
+  color: hsl(0, 84%, 70%);
+  background: hsla(0, 84%, 60%, 0.12);
+}
+
+@media (max-width: 540px) {
+  .partida-row {
+    grid-template-columns: auto auto;
+    grid-template-areas: "id acciones" "meta meta";
+  }
+  .partida-row .partida-id { grid-area: id; }
+  .partida-row .partida-meta { grid-area: meta; white-space: normal; }
+  .partida-row .btn { grid-area: acciones; }
+}
+
 /* --- Pantalla de Bienvenida y Configuración (visible al cargar la app) --- */
 .welcome-dialog {
   max-width: 640px;

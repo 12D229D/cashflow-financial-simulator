@@ -2,6 +2,7 @@ import { FinancialEngine } from '../js/engine/FinancialEngine.js';
 import { MarketEngine } from '../js/engine/MarketEngine.js';
 import { AIPlayer, AI_PROFILES } from '../js/engine/AIPlayer.js';
 import { PROFESSIONS } from '../js/data/professions.js';
+import { pad3, generaCodigoSala, generaSufijoPartida, generaCodigoPartida, esIdPartidaValido, salaDePartida, LETRAS_PARTIDA } from '../js/engine/SalasDB.js';
 
 let passed = 0;
 let failed = 0;
@@ -176,6 +177,68 @@ aiRisky.state = FinancialEngine.buyStocks(aiRisky.state, "OK4U", 100, 5, 0);
 const stockRallyEvent = { category: "StockMarket", symbol: "OK4U", newPrice: 30 };
 const stockSales = aiRisky.evaluateMarketSale(stockRallyEvent);
 assert(stockSales.length === 1 && stockSales[0].type === "SELL_STOCK" && stockSales[0].shares === 100, "IA liquida sus acciones cuando el rally alcanza el precio objetivo ($30)");
+
+// 5. Tests de la Base de Datos de Salas y Partidas (generación de códigos)
+console.log("\n🔹 5. Generación y Validación de Códigos de Salas y Partidas (SalasDB)");
+
+assert(pad3(7) === "007" && pad3(42) === "042" && pad3(123) === "123", "pad3 rellena los códigos de sala a exactamente 3 dígitos");
+assert([...LETRAS_PARTIDA].every(l => /[A-Z]/.test(l) && l !== "I" && l !== "O") && LETRAS_PARTIDA.length === 24, "El alfabeto de partidas tiene 24 letras mayúsculas y excluye I y O (confundibles con 1 y 0)");
+
+// Códigos de sala de 3 dígitos, aleatorios entre los libres y nunca ocupados
+const salasGeneradas = new Set();
+for (let i = 0; i < 60; i++) {
+  salasGeneradas.add(generaCodigoSala(["001", "500", "999"]));
+}
+assert([...salasGeneradas].every(c => /^\d{3}$/.test(c) && c !== "000" && !["001", "500", "999"].includes(c)), "Los códigos de sala son de 3 dígitos (001–999), evitan los ocupados y nunca son '000'");
+assert(salasGeneradas.size > 1, "La generación de salas elige aleatoriamente entre los códigos libres (variedad en 60 tiradas)");
+
+let salasLlenasLanza = false;
+try {
+  const todasLasSalas = [];
+  for (let i = 1; i <= 999; i++) todasLasSalas.push(pad3(i));
+  generaCodigoSala(todasLasSalas);
+} catch (e) {
+  salasLlenasLanza = true;
+}
+assert(salasLlenasLanza, "Con las 999 salas ocupadas, la generación falla con un error controlado en lugar de duplicar códigos");
+
+// Identificadores de partida "NNN-AAA": 3 dígitos de la sala + guion + 3 letras
+assert(esIdPartidaValido("123-ABC") === true, "El validador acepta el formato canónico 'NNN-AAA' (123-ABC)");
+assert(esIdPartidaValido("12-ABC") === false, "El validador rechaza códigos con menos de 3 dígitos (12-ABC)");
+assert(esIdPartidaValido("1234-ABC") === false, "El validador rechaza códigos con más de 3 dígitos (1234-ABC)");
+assert(esIdPartidaValido("123-abc") === false, "El validador rechaza sufijos en minúsculas (123-abc)");
+assert(esIdPartidaValido("123_ABX") === false, "El validador rechaza separadores distintos al guion medio (123_ABX)");
+assert(salaDePartida("042-KLM") === "042", "salaDePartida extrae los 3 dígitos de la sala desde un identificador de partida");
+assert(salaDePartida("42-KLM") === null, "salaDePartida devuelve null ante identificadores malformados");
+
+// El código de partida hereda el código de su sala y evita sufijos ocupados
+const idNuevo = generaCodigoPartida("042", ["AAA", "BBB"]);
+assert(esIdPartidaValido(idNuevo) && idNuevo.startsWith("042-"), "El código de partida combina los 3 dígitos de su sala, un guion y 3 letras mayúsculas");
+assert(idNuevo.slice(4) !== "AAA" && idNuevo.slice(4) !== "BBB", "La generación de partidas evita los sufijos ya ocupados dentro de la sala");
+assert(generaSufijoPartida([], () => 0) === "AAA", "La generación de sufijos es determinista con un generador aleatorio inyectado (rand=0 → AAA)");
+
+// Unicidad sostenida: 200 partidas consecutivas en la misma sala sin colisiones
+const enSala042 = new Set(["042-AAA", "042-BBB", "042-ZZZ"]);
+let todosUnicos = true;
+let todosValidos = true;
+for (let i = 0; i < 200; i++) {
+  const id = generaCodigoPartida("042", [...enSala042].map(x => x.slice(4)));
+  if (enSala042.has(id)) todosUnicos = false;
+  if (!esIdPartidaValido(id) || !id.startsWith("042-")) todosValidos = false;
+  enSala042.add(id);
+}
+assert(todosUnicos && todosValidos, "200 códigos de partida consecutivos: todos únicos, válidos y sin colisiones dentro de la sala");
+
+let sufijosAgotadosLanza = false;
+try {
+  const alfabeto = LETRAS_PARTIDA;
+  const todosLosSufijos = [];
+  for (const a of alfabeto) for (const b of alfabeto) for (const c of alfabeto) todosLosSufijos.push(a + b + c);
+  generaSufijoPartida(todosLosSufijos);
+} catch (e) {
+  sufijosAgotadosLanza = true;
+}
+assert(sufijosAgotadosLanza, "Con los 13.824 sufijos de una sala agotados, la generación falla con un error controlado");
 
 console.log("\n=================================================");
 console.log(`📊 RESULTADO FINAL: ${passed} pasados, ${failed} fallidos.`);

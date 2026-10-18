@@ -5,6 +5,7 @@ import { CardDeck } from './engine/CardDeck.js';
 import { MarketEngine } from './engine/MarketEngine.js';
 import { AIPlayer, AI_PROFILES } from './engine/AIPlayer.js';
 import { StorageEngine } from './engine/StorageEngine.js';
+import { SalasDB } from './engine/SalasDB.js';
 
 // Paleta de colores de fichas para los asientos de la mesa (humanos o IA)
 const PLAYER_COLORS = ["#38bdf8", "#a78bfa", "#f472b6", "#34d399", "#fbbf24", "#fb7185"];
@@ -18,6 +19,12 @@ class CashflowApp {
     this.mode202 = false;
     this.cardDeck = new CardDeck(this.mode202);
 
+    // Base de datos local de salas y partidas (IndexedDB) y seguimiento de la
+    // partida registrada asociada a la sesión en curso (null = sin guardar aún)
+    this.db = new SalasDB();
+    this.currentSalaCodigo = null;
+    this.currentPartidaId = null;
+
     this.players = [];
     this.activePlayerIndex = 0;
     this.turn = 1;
@@ -25,6 +32,12 @@ class CashflowApp {
 
     this.initDOM();
     this.initWelcomeScreen();
+    this.initSalasModal();
+
+    // Importa una sola vez la partida del sistema legado de localStorage a la
+    // base de datos de salas (si existe); el resultado se consulta al abrir el
+    // panel de salas, no bloquea el arranque
+    this.db.migrarGuardadoLegado();
 
     // Vista previa: la mesa por defecto se dibuja tras el cristal de la
     // pantalla de bienvenida; la sesión real de juego arranca al confirmar
@@ -124,6 +137,10 @@ class CashflowApp {
 
     // Mesa inicial sugerida en la pantalla de bienvenida: 1 humano + 2 bots clásicos
     this.buildDefaultRoster().forEach(cfg => this.addSetupPlayerSlot(cfg));
+
+    // Entrada desde la bienvenida: retomar una partida guardada en la base de
+    // datos local de salas sin pasar por la configuración de mesa
+    document.getElementById("btnWelcomeLoad").addEventListener("click", () => this.loadSavedGame());
   }
 
   // Arranca la sesión de juego a partir de la configuración elegida en la
@@ -131,6 +148,11 @@ class CashflowApp {
   startConfiguredGame(roster, mode202) {
     this.mode202 = mode202;
     this.cardDeck = new CardDeck(this.mode202);
+
+    // Sesión nueva: se desasocia de cualquier partida registrada en la base
+    // de datos (el próximo 💾 Guardar ofrecerá elegir o crear sala otra vez)
+    this.currentSalaCodigo = null;
+    this.currentPartidaId = null;
 
     this.setupPlayers(roster);
     document.getElementById("welcomeScreen").classList.add("hidden");
@@ -1127,13 +1149,14 @@ class CashflowApp {
     }
   }
 
-  saveCurrentGame() {
-    const res = StorageEngine.saveGame({
+  // Snapshot serializable del estado completo de la sesión en curso (jugadores,
+  // turno activo, reglamento y mercado bursátil con patrones, opciones y cortos)
+  construirSnapshotPartida() {
+    return {
       players: this.players,
       activePlayerIndex: this.activePlayerIndex,
       turn: this.turn,
       mode202: this.mode202,
-      // Snapshot del mercado para restaurar precios, patrones, opciones y cortos
       market: {
         turn: this.market.turn,
         stocks: this.market.stocks.map(s => ({
@@ -1146,25 +1169,190 @@ class CashflowApp {
         optionsContracts: this.market.optionsContracts,
         shortPositions: this.market.shortPositions
       }
-    });
-    if (res.success) {
-      alert("¡Partida guardada exitosamente en el almacenamiento local!");
-      this.log("💾 Partida guardada.", "log-success");
-    } else {
-      alert("Error al guardar: " + res.error);
+    };
+  }
+
+  // 💾 Guardar: si la sesión ya está asociada a una partida registrada,
+  // actualiza ese mismo registro "NNN-AAA" en sitio; si no, abre el panel
+  // de salas para elegir la sala destino o crear una nueva
+  saveCurrentGame() {
+    if (this.currentPartidaId) {
+      this.guardarEnSala(this.currentSalaCodigo, this.currentPartidaId);
+      return;
+    }
+    this.abrirSalasModal("guardar");
+  }
+
+  // 📂 Cargar: abre el explorador de salas y partidas de la base de datos local
+  loadSavedGame() {
+    this.abrirSalasModal("cargar");
+  }
+
+  initSalasModal() {
+    document.getElementById("btnSalasClose").addEventListener("click", () => this.cerrarSalasModal());
+    // Delegación única sobre el contenedor: el contenido del panel se
+    // regenera por completo en cada render y rebindaría listeners duplicados
+    document.getElementById("salasContent").addEventListener("click", (e) => this.handleSalasClick(e));
+  }
+
+  cerrarSalasModal() {
+    document.getElementById("salasModal").classList.add("hidden");
+    this._salaSeleccionada = null;
+  }
+
+  abrirSalasModal(modo) {
+    this._modoSalas = modo;
+    this._salaSeleccionada = null;
+    document.getElementById("salasModalTitle").textContent = modo === "guardar"
+      ? "💾 Guardar Partida en una Sala"
+      : "📂 Cargar Partida Guardada";
+    document.getElementById("salasModal").classList.remove("hidden");
+    this.renderSalas();
+  }
+
+  async renderSalas() {
+    const cont = document.getElementById("salasContent");
+    cont.innerHTML = '<p class="salas-vacio">Consultando la base de datos local…</p>';
+    try {
+      const salas = await this.db.listarSalas();
+
+      if (this._modoSalas === "guardar") {
+        const resumen = `Modo ${this.mode202 ? "Avanzado" : "Esencial"} • Turno ${this.turn} • ${this.players.length} participante(s)`;
+        const tarjetas = salas.map(s => `
+          <button type="button" class="sala-card" data-sala-codigo="${s.codigo}">
+            <span class="sala-code">${s.codigo}</span>
+            <span class="sala-card-body"><strong>${this.escaparHtml(s.nombre)}</strong><span class="sala-meta">${s.numPartidas} partida(s) guardada(s)</span></span>
+            <span class="sala-card-pick">✓</span>
+          </button>`).join("");
+        cont.innerHTML = `
+          <p class="salas-resumen">${resumen}</p>
+          <div class="sala-list">
+            ${salas.length ? tarjetas : '<p class="salas-vacio">Aún no hay salas: crea la primera para organizar tus partidas.</p>'}
+            <button type="button" class="sala-card sala-card-new" data-sala-codigo="nueva">
+              <span class="sala-code">➕</span>
+              <span class="sala-card-body"><strong>Crear sala nueva</strong><span class="sala-meta">Se asignará un código libre de 3 dígitos</span></span>
+              <span class="sala-card-pick">✓</span>
+            </button>
+          </div>
+          <div id="salaNuevaForm" class="sala-nueva-form hidden">
+            <label for="inputSalaNombre">Nombre de la sala (opcional):</label>
+            <input type="text" id="inputSalaNombre" maxlength="40" placeholder="Ej. Mesa de los martes">
+          </div>
+          <div class="setup-actions">
+            <button type="button" id="btnSalasConfirmGuardar" class="btn btn-primary" disabled>💾 Guardar Partida Aquí</button>
+          </div>`;
+        return;
+      }
+
+      // Modo cargar: cada sala con sus partidas listadas por última actualización
+      const bloques = await Promise.all(salas.map(async s => {
+        const partidas = await this.db.listarPartidas(s.codigo);
+        const filas = partidas.map(p => `
+          <div class="partida-row">
+            <span class="partida-id">${p.id}</span>
+            <span class="partida-meta">${p.modo === "202" ? "Avanzado" : "Esencial"} • Turno ${p.turno} • ${p.numJugadores} jug. • ${this.formatearFecha(p.actualizado)}</span>
+            <button type="button" class="btn btn-outline btn-sm" data-cargar-partida="${p.id}">📂 Cargar</button>
+            <button type="button" class="btn btn-outline btn-sm btn-borrar" data-eliminar-partida="${p.id}" title="Eliminar partida">🗑️</button>
+          </div>`).join("");
+        return `
+          <div class="sala-bloque">
+            <div class="sala-bloque-head">
+              <span class="sala-code">${s.codigo}</span>
+              <strong class="sala-bloque-nombre">${this.escaparHtml(s.nombre)}</strong>
+              <button type="button" class="btn btn-outline btn-sm btn-borrar" data-eliminar-sala="${s.codigo}" title="Eliminar la sala y todas sus partidas">🗑️ Sala</button>
+            </div>
+            <div class="partida-rows">${filas || '<p class="salas-vacio">Sin partidas guardadas en esta sala.</p>'}</div>
+          </div>`;
+      }));
+      cont.innerHTML = bloques.join("")
+        || '<p class="salas-vacio">Aún no hay salas ni partidas guardadas en este navegador. Inicia una partida y pulsa 💾 Guardar para crear la primera sala.</p>';
+    } catch (err) {
+      cont.innerHTML = `<p class="salas-vacio">⚠️ Error de base de datos: ${this.escaparHtml(err.message)}</p>`;
     }
   }
 
-  loadSavedGame() {
-    const saved = StorageEngine.loadGame();
-    if (!saved || !saved.state || !Array.isArray(saved.state.players) || saved.state.players.length === 0) {
-      alert("No hay ninguna partida guardada en este navegador.");
-      return;
+  handleSalasClick(e) {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    if (btn.dataset.cargarPartida) { this.cargarPartidaGuardada(btn.dataset.cargarPartida); return; }
+    if (btn.dataset.eliminarPartida) { this.confirmarBorrado(btn, () => this.borrarPartida(btn.dataset.eliminarPartida)); return; }
+    if (btn.dataset.eliminarSala) { this.confirmarBorrado(btn, () => this.borrarSala(btn.dataset.eliminarSala)); return; }
+    if (btn.id === "btnSalasConfirmGuardar") { this.confirmarGuardarEnSala(); return; }
+    if (btn.dataset.salaCodigo) { this.seleccionarSala(btn.dataset.salaCodigo, btn); }
+  }
+
+  seleccionarSala(codigo, btn) {
+    this._salaSeleccionada = codigo;
+    document.querySelectorAll("#salasContent .sala-card").forEach(c => c.classList.toggle("selected", c === btn));
+    const form = document.getElementById("salaNuevaForm");
+    if (form) form.classList.toggle("hidden", codigo !== "nueva");
+    const confirmar = document.getElementById("btnSalasConfirmGuardar");
+    if (confirmar) confirmar.disabled = false;
+  }
+
+  async confirmarGuardarEnSala() {
+    const eleccion = this._salaSeleccionada;
+    if (!eleccion) return;
+    const input = document.getElementById("inputSalaNombre");
+    const nombreNueva = input && !input.closest(".hidden") ? input.value.trim() : "";
+    await this.guardarEnSala(eleccion, null, nombreNueva);
+  }
+
+  // Persiste el snapshot de la sesión en la base de datos. `codigoEleccion`
+  // es un código de sala existente o "nueva" (crea sala con `nombreSalaNueva`);
+  // `partidaIdExistente` actualiza el registro en sitio sin cambiar su código
+  async guardarEnSala(codigoEleccion, partidaIdExistente, nombreSalaNueva = "") {
+    try {
+      let codigoSala = codigoEleccion;
+      if (!codigoSala || codigoSala === "nueva") {
+        const sala = await this.db.crearSala(nombreSalaNueva);
+        codigoSala = sala.codigo;
+      }
+      const datos = {
+        modo: this.mode202 ? "202" : "101",
+        turno: this.turn,
+        numJugadores: this.players.length,
+        resumenJugadores: this.players.map(p => `${p.name}${p.isAI ? " (IA)" : ""}`).join(", "),
+        estado: this.construirSnapshotPartida()
+      };
+      const res = await this.db.guardarPartida(codigoSala, datos, partidaIdExistente);
+      this.currentSalaCodigo = codigoSala;
+      this.currentPartidaId = res.id;
+      this.cerrarSalasModal();
+      this.log(res.esNueva
+        ? `💾 Partida ${res.id} guardada en la sala ${codigoSala} (${this.players.length} jugadores).`
+        : `💾 Partida ${res.id} actualizada (Turno ${this.turn}).`, "log-success");
+    } catch (err) {
+      this.log(`⚠️ No se pudo guardar la partida: ${err.message}`, "log-danger");
     }
+  }
 
-    const snap = saved.state;
+  async cargarPartidaGuardada(id) {
+    try {
+      const registro = await this.db.cargarPartida(id);
+      if (!registro || !registro.estado || !Array.isArray(registro.estado.players) || registro.estado.players.length === 0) {
+        this.log(`⚠️ La partida ${id} no pudo leerse de la base de datos.`, "log-danger");
+        return;
+      }
+      this.restaurarSnapshot(registro.estado);
+      this.currentSalaCodigo = registro.sala;
+      this.currentPartidaId = registro.id;
 
-    // Restaurar modalidad, barajas y mercado bursátil
+      document.getElementById("welcomeScreen").classList.add("hidden");
+      document.getElementById("btnWelcomeCancel").classList.add("hidden");
+      this.cerrarSalasModal();
+      this.log(`📂 Partida ${registro.id} cargada desde la sala ${registro.sala}.`, "log-warning");
+      // Si el turno restaurado pertenece a un bot, reanudar su ejecución
+      this.kickOffTurn();
+    } catch (err) {
+      this.log(`⚠️ Error al cargar la partida: ${err.message}`, "log-danger");
+    }
+  }
+
+  // Reconstruye la sesión a partir de un snapshot guardado: reglamento, mercado
+  // bursátil y jugadores (los bots se reinstancian como AIPlayer porque JSON
+  // descarta prototipos). No arranca turnos: quien llama decide si reanuda.
+  restaurarSnapshot(snap) {
     this.mode202 = !!snap.mode202;
     this.cardDeck = new CardDeck(this.mode202);
 
@@ -1183,8 +1371,6 @@ class CashflowApp {
       this.market.shortPositions = snap.market.shortPositions || [];
     }
 
-    // Reconstruir jugadores: los bots requieren reinstanciar AIPlayer para
-    // recuperar sus métodos heurísticos (JSON.stringify descarta prototipos)
     this.players = snap.players.map(p => {
       if (p.isAI) {
         const prof = PROFESSIONS.find(pr => pr.title === p.state.profession) || PROFESSIONS[0];
@@ -1203,16 +1389,74 @@ class CashflowApp {
 
     this.updateModePill();
     this.refreshUI();
-    this.log(`📂 Partida restaurada: Turno ${this.turn}, ${this.players.length} jugadores, modo ${this.mode202 ? 'Avanzado' : 'Esencial'}.`, "log-warning");
 
     // Restaurar visibilidad del botón de escape de la Carrera de la Rata
     // (multijugador: se evalúa al jugador activo, no al "primer humano")
     const active = this.activePlayer;
     const canExitNow = active && !active.isAI && active.state.canExitRatRace && !active.state.inFastTrack;
     document.getElementById("btnExitRatRace").classList.toggle("hidden", !canExitNow);
+  }
 
-    // Si el turno restaurado pertenece a un bot, reanudar su ejecución
-    this.kickOffTurn();
+  async borrarPartida(id) {
+    try {
+      await this.db.eliminarPartida(id);
+      if (this.currentPartidaId === id) {
+        this.currentPartidaId = null;
+        this.currentSalaCodigo = null;
+      }
+      this.log(`🗑️ Partida ${id} eliminada de la base de datos.`, "log-warning");
+      this.renderSalas();
+    } catch (err) {
+      this.log(`⚠️ No se pudo eliminar la partida: ${err.message}`, "log-danger");
+    }
+  }
+
+  async borrarSala(codigo) {
+    try {
+      await this.db.eliminarSala(codigo);
+      if (this.currentSalaCodigo === codigo) {
+        this.currentPartidaId = null;
+        this.currentSalaCodigo = null;
+      }
+      this.log(`🗑️ Sala ${codigo} eliminada junto con todas sus partidas.`, "log-warning");
+      this.renderSalas();
+    } catch (err) {
+      this.log(`⚠️ No se pudo eliminar la sala: ${err.message}`, "log-danger");
+    }
+  }
+
+  // Confirmación de borrado en dos pasos (sin confirm(), que bloquea la
+  // automatización y la UX): el primer clic arma el botón y el segundo lo
+  // ejecuta; se desarma solo tras 2.5 s sin actividad
+  confirmarBorrado(btn, accion) {
+    if (btn.dataset.armed === "1") {
+      clearTimeout(Number(btn.dataset.timer || 0));
+      accion();
+      return;
+    }
+    btn.dataset.armed = "1";
+    btn.dataset.labelOriginal = btn.textContent;
+    btn.textContent = "¿Seguro?";
+    btn.classList.add("armed");
+    btn.dataset.timer = String(setTimeout(() => {
+      btn.dataset.armed = "";
+      btn.textContent = btn.dataset.labelOriginal;
+      btn.classList.remove("armed");
+    }, 2500));
+  }
+
+  escaparHtml(texto) {
+    return String(texto).replace(/[&<>"']/g, c => (
+      { "&": "&#38;", "<": "&#60;", ">": "&#62;", '"': "&#34;", "'": "&#39;" }[c]
+    ));
+  }
+
+  formatearFecha(iso) {
+    try {
+      return new Date(iso).toLocaleString(undefined, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "";
+    }
   }
 
   checkBankruptcyOrDebt(player) {

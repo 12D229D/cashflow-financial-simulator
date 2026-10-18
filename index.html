@@ -291,7 +291,22 @@
       <div class="setup-actions welcome-actions">
         <button id="btnWelcomeStart" class="btn btn-primary btn-lg">🚀 Iniciar Partida</button>
         <button id="btnWelcomeQuickStart" class="btn btn-secondary">🎲 Mesa Rápida (Tú + 2 IA)</button>
+        <button id="btnWelcomeLoad" class="btn btn-outline" type="button">📂 Cargar Partida Guardada</button>
         <button id="btnWelcomeCancel" class="btn btn-outline hidden" type="button">↩️ Volver a la Partida</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Base de Datos de Salas y Partidas (IndexedDB local, ver js/engine/SalasDB.js) -->
+  <div class="modal-overlay hidden" id="salasModal">
+    <div class="glass-panel salas-dialog">
+      <div class="salas-header">
+        <h2 id="salasModalTitle">🗂️ Salas de Juego y Partidas</h2>
+        <button id="btnSalasClose" class="slot-remove" type="button" title="Cerrar panel">✕</button>
+      </div>
+      <p class="section-desc">Las partidas se guardan en este navegador organizadas por salas con código de 3 dígitos; cada partida se identifica como <strong>NNN-AAA</strong> (los 3 dígitos de su sala, un guion y 3 letras).</p>
+      <div id="salasContent">
+        <!-- Contenido renderizado dinámicamente desde app.js (modo guardar o cargar) -->
       </div>
     </div>
   </div>
