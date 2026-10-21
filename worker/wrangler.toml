@@ -11,5 +11,4 @@ ALLOWED_ORIGINS = "https://12d229d.github.io,http://localhost:8080,http://127.0.
 [[d1_databases]]
 binding = "DB"
 database_name = "flujo-maestro-db"
-# Reemplazar con el id que devuelve: npx wrangler d1 create flujo-maestro-db
-database_id = "REEMPLAZAR_CON_DATABASE_ID"
+database_id = "bce1f3c6-f96a-4318-bbe0-f61479350d22"

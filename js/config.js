@@ -4,7 +4,7 @@
 // Tras `npx wrangler deploy`, pega aquí la URL del Worker, por ejemplo:
 //   "https://flujo-maestro-api.<tu-subdominio>.workers.dev"
 // También puede forzarse por URL para pruebas: ?api=http://127.0.0.1:8787
-export const API_BASE = "";
+export const API_BASE = "https://flujo-maestro-api.avalanchsecurity.workers.dev";
 
 export function resolverApiBase() {
   try {
