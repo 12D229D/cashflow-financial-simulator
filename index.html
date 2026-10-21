@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flujo Maestro — Simulador de Libertad Financiera</title>
+  <meta name="description" content="Flujo Maestro: simulador educativo de libertad financiera con hot-seat de hasta 6 jugadores, IA, bolsa y opciones. Guarda tus partidas en el navegador o en la nube.">
+  <meta name="theme-color" content="#060b18">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -29,6 +32,7 @@
       </div>
       <div class="header-actions">
         <div class="mode-pill" id="modePill">Modo: Esencial (Fundamental)</div>
+        <button id="storagePill" class="storage-pill" type="button" data-estado="local" title="Partidas guardadas en este navegador (IndexedDB)">💾 Local</button>
         <button id="btnNewGame" class="btn btn-secondary">🎮 Nueva Partida</button>
         <button id="btnSaveGame" class="btn btn-outline">💾 Guardar</button>
         <button id="btnLoadGame" class="btn btn-outline">📂 Cargar</button>
@@ -304,7 +308,7 @@
         <h2 id="salasModalTitle">🗂️ Salas de Juego y Partidas</h2>
         <button id="btnSalasClose" class="slot-remove" type="button" title="Cerrar panel">✕</button>
       </div>
-      <p class="section-desc">Las partidas se guardan en este navegador organizadas por salas con código de 3 dígitos; cada partida se identifica como <strong>NNN-AAA</strong> (los 3 dígitos de su sala, un guion y 3 letras).</p>
+      <p class="section-desc" id="salasDesc">Las partidas se guardan en este navegador organizadas por salas con código de 3 dígitos; cada partida se identifica como <strong>NNN-AAA</strong> (los 3 dígitos de su sala, un guion y 3 letras).</p>
       <div id="salasContent">
         <!-- Contenido renderizado dinámicamente desde app.js (modo guardar o cargar) -->
       </div>
@@ -312,7 +316,7 @@
   </div>
 
   <footer class="app-footer">
-    <p>Flujo Maestro — Portafolio Codex • Simulador educativo de inteligencia financiera • Desarrollado con Vanilla JS, Canvas y persistencia local en el navegador</p>
+    <p>Flujo Maestro — Portafolio Codex • Simulador educativo de inteligencia financiera • Desarrollado con Vanilla JS, Canvas, IndexedDB y sincronización opcional en Cloudflare Workers + D1</p>
   </footer>
 
   <script type="module" src="js/app.js"></script>

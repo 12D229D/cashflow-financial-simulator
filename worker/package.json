@@ -1,0 +1,17 @@
+{
+  "name": "flujo-maestro-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API Worker (Cloudflare Workers + D1) de salas y partidas de Flujo Maestro",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init:local": "wrangler d1 execute flujo-maestro-db --local --file=schema.sql",
+    "db:init:remote": "wrangler d1 execute flujo-maestro-db --remote --file=schema.sql",
+    "test": "node --test test/api.test.js test/cliente.test.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

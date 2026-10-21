@@ -6,6 +6,8 @@ import { MarketEngine } from './engine/MarketEngine.js';
 import { AIPlayer, AI_PROFILES } from './engine/AIPlayer.js';
 import { StorageEngine } from './engine/StorageEngine.js';
 import { SalasDB } from './engine/SalasDB.js';
+import { NubeSalasDB } from './engine/NubeSalasDB.js';
+import { resolverApiBase } from './config.js';
 
 // Paleta de colores de fichas para los asientos de la mesa (humanos o IA)
 const PLAYER_COLORS = ["#38bdf8", "#a78bfa", "#f472b6", "#34d399", "#fbbf24", "#fb7185"];
@@ -21,7 +23,11 @@ class CashflowApp {
 
     // Base de datos local de salas y partidas (IndexedDB) y seguimiento de la
     // partida registrada asociada a la sesión en curso (null = sin guardar aún)
-    this.db = new SalasDB();
+    // Si hay API Worker configurada (js/config.js) y responde, `this.db` pasa a
+    // NubeSalasDB (Cloudflare D1); si no, se queda en la base local.
+    this.dbLocal = new SalasDB();
+    this.dbNube = null;
+    this.db = this.dbLocal;
     this.currentSalaCodigo = null;
     this.currentPartidaId = null;
 
@@ -37,7 +43,8 @@ class CashflowApp {
     // Importa una sola vez la partida del sistema legado de localStorage a la
     // base de datos de salas (si existe); el resultado se consulta al abrir el
     // panel de salas, no bloquea el arranque
-    this.db.migrarGuardadoLegado();
+    this.dbLocal.migrarGuardadoLegado();
+    this.iniciarAlmacen();
 
     // Vista previa: la mesa por defecto se dibuja tras el cristal de la
     // pantalla de bienvenida; la sesión real de juego arranca al confirmar
@@ -1193,6 +1200,48 @@ class CashflowApp {
     // Delegación única sobre el contenedor: el contenido del panel se
     // regenera por completo en cada render y rebindaría listeners duplicados
     document.getElementById("salasContent").addEventListener("click", (e) => this.handleSalasClick(e));
+    document.getElementById("storagePill").addEventListener("click", () => this.alternarAlmacen());
+  }
+
+  // Detecta la API Worker en segundo plano; no bloquea el arranque
+  async iniciarAlmacen() {
+    const base = resolverApiBase();
+    if (!base) { this.actualizarPillAlmacen("local"); return; }
+    this.actualizarPillAlmacen("comprobando");
+    const nube = new NubeSalasDB(base);
+    if (await nube.disponible()) {
+      this.dbNube = nube;
+      this.db = nube;
+      this.actualizarPillAlmacen("nube");
+      this.log("☁️ Sincronización en la nube activa: tus salas y partidas se guardan en Cloudflare D1.", "log-info");
+    } else {
+      this.actualizarPillAlmacen("sin-conexion");
+    }
+  }
+
+  // Cambia entre nube y base local (solo si la API respondió al arrancar)
+  alternarAlmacen() {
+    if (!this.dbNube) { this.iniciarAlmacen(); return; }
+    this.db = this.db === this.dbNube ? this.dbLocal : this.dbNube;
+    this.currentSalaCodigo = null;
+    this.currentPartidaId = null;
+    this.actualizarPillAlmacen(this.db.esNube ? "nube" : "local");
+    this.log(this.db.esNube ? "☁️ Guardado en la nube activado." : "💾 Guardado local (este navegador) activado.", "log-info");
+    if (!document.getElementById("salasModal").classList.contains("hidden")) this.renderSalas();
+  }
+
+  actualizarPillAlmacen(estado) {
+    const pill = document.getElementById("storagePill");
+    const textos = {
+      local: ["💾 Local", "Partidas guardadas en este navegador (IndexedDB)"],
+      comprobando: ["⏳ Conectando…", "Comprobando la API en la nube"],
+      nube: ["☁️ Nube", "Partidas sincronizadas en Cloudflare D1 · clic para usar guardado local"],
+      "sin-conexion": ["⚠️ Sin nube", "La API en la nube no responde; usando guardado local · clic para reintentar"]
+    };
+    const [txt, titulo] = textos[estado] || textos.local;
+    pill.textContent = txt;
+    pill.title = titulo;
+    pill.dataset.estado = estado;
   }
 
   cerrarSalasModal() {
@@ -1212,9 +1261,14 @@ class CashflowApp {
 
   async renderSalas() {
     const cont = document.getElementById("salasContent");
-    cont.innerHTML = '<p class="salas-vacio">Consultando la base de datos local…</p>';
+    cont.innerHTML = `<p class="salas-vacio">Consultando la base de datos ${this.db.esNube ? "en la nube" : "local"}…</p>`;
+    document.getElementById("salasDesc").innerHTML = this.db.esNube
+      ? '☁️ <strong>Nube (Cloudflare D1):</strong> comparte el código de 3 dígitos de tu sala para que otros carguen sus partidas <strong>NNN-AAA</strong> desde cualquier dispositivo. Solo el creador de la sala puede guardar o borrar.'
+      : '💾 <strong>Local:</strong> las partidas se guardan en este navegador organizadas por salas con código de 3 dígitos; cada partida se identifica como <strong>NNN-AAA</strong> (los 3 dígitos de su sala, un guion y 3 letras).';
     try {
-      const salas = await this.db.listarSalas();
+      let salas = await this.db.listarSalas();
+      // En la nube solo se puede guardar en salas propias
+      if (this._modoSalas === "guardar" && this.db.esNube) salas = salas.filter(s => s.propia);
 
       if (this._modoSalas === "guardar") {
         const resumen = `Modo ${this.mode202 ? "Avanzado" : "Esencial"} • Turno ${this.turn} • ${this.players.length} participante(s)`;
@@ -1252,20 +1306,28 @@ class CashflowApp {
             <span class="partida-id">${p.id}</span>
             <span class="partida-meta">${p.modo === "202" ? "Avanzado" : "Esencial"} • Turno ${p.turno} • ${p.numJugadores} jug. • ${this.formatearFecha(p.actualizado)}</span>
             <button type="button" class="btn btn-outline btn-sm" data-cargar-partida="${p.id}">📂 Cargar</button>
-            <button type="button" class="btn btn-outline btn-sm btn-borrar" data-eliminar-partida="${p.id}" title="Eliminar partida">🗑️</button>
+            ${this.db.esNube && !s.propia ? "" : `<button type="button" class="btn btn-outline btn-sm btn-borrar" data-eliminar-partida="${p.id}" title="Eliminar partida">🗑️</button>`}
           </div>`).join("");
         return `
           <div class="sala-bloque">
             <div class="sala-bloque-head">
               <span class="sala-code">${s.codigo}</span>
               <strong class="sala-bloque-nombre">${this.escaparHtml(s.nombre)}</strong>
-              <button type="button" class="btn btn-outline btn-sm btn-borrar" data-eliminar-sala="${s.codigo}" title="Eliminar la sala y todas sus partidas">🗑️ Sala</button>
+              <button type="button" class="btn btn-outline btn-sm btn-borrar" data-eliminar-sala="${s.codigo}" title="${this.db.esNube && !s.propia ? "Quitar de mi lista (la sala sigue en la nube)" : "Eliminar la sala y todas sus partidas"}">${this.db.esNube && !s.propia ? "✕ Quitar" : "🗑️ Sala"}</button>
             </div>
             <div class="partida-rows">${filas || '<p class="salas-vacio">Sin partidas guardadas en esta sala.</p>'}</div>
           </div>`;
       }));
-      cont.innerHTML = bloques.join("")
-        || '<p class="salas-vacio">Aún no hay salas ni partidas guardadas en este navegador. Inicia una partida y pulsa 💾 Guardar para crear la primera sala.</p>';
+      const unirse = this.db.esNube ? `
+        <div class="sala-unirse">
+          <label for="inputUnirseSala">🔗 Unirse a una sala compartida:</label>
+          <div class="input-action-row">
+            <input type="text" id="inputUnirseSala" class="input-control" maxlength="3" inputmode="numeric" placeholder="042">
+            <button type="button" id="btnUnirseSala" class="btn btn-secondary btn-sm">Añadir</button>
+          </div>
+        </div>` : "";
+      cont.innerHTML = unirse + (bloques.join("")
+        || `<p class="salas-vacio">Aún no hay salas ni partidas guardadas ${this.db.esNube ? "en tu cuenta de la nube" : "en este navegador"}. Inicia una partida y pulsa 💾 Guardar para crear la primera sala.</p>`);
     } catch (err) {
       cont.innerHTML = `<p class="salas-vacio">⚠️ Error de base de datos: ${this.escaparHtml(err.message)}</p>`;
     }
@@ -1278,7 +1340,20 @@ class CashflowApp {
     if (btn.dataset.eliminarPartida) { this.confirmarBorrado(btn, () => this.borrarPartida(btn.dataset.eliminarPartida)); return; }
     if (btn.dataset.eliminarSala) { this.confirmarBorrado(btn, () => this.borrarSala(btn.dataset.eliminarSala)); return; }
     if (btn.id === "btnSalasConfirmGuardar") { this.confirmarGuardarEnSala(); return; }
+    if (btn.id === "btnUnirseSala") { this.unirseASala(); return; }
     if (btn.dataset.salaCodigo) { this.seleccionarSala(btn.dataset.salaCodigo, btn); }
+  }
+
+  async unirseASala() {
+    const input = document.getElementById("inputUnirseSala");
+    const codigo = (input?.value || "").trim().padStart(3, "0");
+    try {
+      const sala = await this.db.unirseASala(codigo);
+      this.log(`🔗 Sala ${sala.codigo} («${sala.nombre}») añadida a tu lista.`, "log-success");
+      this.renderSalas();
+    } catch (err) {
+      this.log(`⚠️ No se pudo añadir la sala: ${err.message}`, "log-danger");
+    }
   }
 
   seleccionarSala(codigo, btn) {

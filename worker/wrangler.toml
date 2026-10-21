@@ -1,0 +1,15 @@
+# API Worker de Flujo Maestro (salas y partidas en Cloudflare D1)
+# Frontend: GitHub Pages (https://12d229d.github.io/cashflow-financial-simulator/)
+name = "flujo-maestro-api"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# Orígenes autorizados por CORS (separados por coma)
+ALLOWED_ORIGINS = "https://12d229d.github.io,http://localhost:8080,http://127.0.0.1:8080,http://localhost:5500,http://127.0.0.1:5500"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "flujo-maestro-db"
+# Reemplazar con el id que devuelve: npx wrangler d1 create flujo-maestro-db
+database_id = "REEMPLAZAR_CON_DATABASE_ID"

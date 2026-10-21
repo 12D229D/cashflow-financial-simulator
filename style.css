@@ -1472,6 +1472,88 @@ body::before {
   100% { transform: translateY(112vh) rotate(680deg); opacity: 0.25; }
 }
 
+/* ==========================================================================
+   Mejoras Visuales v1.3 — Sincronización en la Nube y Pulido de Interfaz
+   ========================================================================== */
+
+/* Indicador de almacenamiento (Local / Nube) en la cabecera */
+.storage-pill {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  background: hsla(215, 20%, 40%, 0.15);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
+}
+.storage-pill:hover { transform: translateY(-1px); color: var(--text-main); }
+.storage-pill[data-estado="nube"] {
+  background: hsla(150, 75%, 45%, 0.14);
+  border-color: hsla(150, 75%, 45%, 0.45);
+  color: var(--color-positive);
+  box-shadow: 0 0 14px hsla(150, 75%, 45%, 0.18);
+}
+.storage-pill[data-estado="comprobando"] { animation: pillPulse 1.2s ease-in-out infinite; }
+.storage-pill[data-estado="sin-conexion"] {
+  background: hsla(43, 96%, 56%, 0.12);
+  border-color: hsla(43, 96%, 56%, 0.4);
+  color: var(--color-gold);
+}
+@keyframes pillPulse { 50% { opacity: 0.55; } }
+
+/* Formulario "Unirse a sala compartida" del panel de salas */
+.sala-unirse {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, hsla(199, 89%, 52%, 0.1), hsla(265, 83%, 65%, 0.08));
+  border: 1px dashed hsla(199, 89%, 52%, 0.4);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.sala-unirse .input-control {
+  max-width: 6.5rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.25em;
+  text-align: center;
+}
+
+/* Brillo deslizante en botones principales */
+.btn-primary, .btn-accent, .btn-gold { position: relative; overflow: hidden; }
+.btn-primary::after, .btn-accent::after, .btn-gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, hsla(0, 0%, 100%, 0.28) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.btn-primary:hover::after, .btn-accent:hover::after, .btn-gold:hover::after { transform: translateX(120%); }
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; filter: saturate(0.6); }
+
+/* Paneles de cristal: borde degradado sutil al pasar el cursor */
+.glass-panel { transition: border-color 0.3s ease, box-shadow 0.3s ease; }
+.glass-panel:hover { border-color: hsla(199, 60%, 55%, 0.35); }
+
+/* Entrada suave del contenido del panel de salas */
+#salasContent > * { animation: salasFadeIn 0.35s ease both; }
+@keyframes salasFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Selección de texto y barra de desplazamiento acordes a la paleta */
+::selection { background: hsla(150, 75%, 45%, 0.35); color: #fff; }
+* { scrollbar-width: thin; scrollbar-color: hsla(220, 20%, 40%, 0.6) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: hsla(220, 20%, 40%, 0.6); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: hsla(199, 60%, 50%, 0.7); }
+
 /* Accesibilidad: respetar la preferencia de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
